@@ -66,14 +66,32 @@ tags: [<relevant, tags>]
 - Mark uncertain claims with `> [!question]` callouts.
 - Target ~500-1500 words depending on complexity.
 
-### 4. Commit and Push
+### 4. Create Branch and Open PR
+
+**Do NOT push directly to `main`.** Each report gets its own branch and pull request for review.
 
 ```bash
 cd /opt/data/repos/research-reports
+git checkout main
+git pull
+BRANCH="report/<report-name>"
+git checkout -b "$BRANCH"
 git add content/<report-name>.md
 git commit -m "Add report: <short title>"
-git push
+git push -u origin "$BRANCH"
+gh pr create --title "Add report: <short title>" --body "## Report: <short title>
+
+**Type:** <type>
+**Source:** <source URL or N/A>
+
+<1-2 sentence summary of what was researched and key takeaway.>"
 ```
+
+### 5. Handle Review Feedback
+
+- If the user requests edits: checkout the PR branch, make changes, push, and request re-review.
+- Do not merge PRs yourself — wait for explicit approval from the user.
+- Once the user approves and merges, the site will auto-deploy via CI.
 
 ## File Naming Convention
 

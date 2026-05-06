@@ -12,6 +12,7 @@ Deconstruct a codebase and explain *how it works* — not just what files exist,
 - Skim the project structure (tree view, top-level directories)
 - Check `package.json` / `pyproject.toml` / `Cargo.toml` / `go.mod` for dependencies, scripts, project metadata
 - Identify the framework(s) and runtime in play
+- **Record the commit SHA** — use `gh api "repos/<owner>/<repo>/commits/main" --jq '.sha[:7]'` (or the default branch). This goes in the report's source callout.
 
 Output: A one-paragraph summary of what this project is and what stack it uses.
 
@@ -74,6 +75,8 @@ tags: [<language>, <framework>, ...]
 ---
 
 # Analyzing <project>
+
+> **Source:** [<owner>/<repo>](<repo URL>) @ [`<short SHA>`](<repo URL>/commit/<full SHA>)
 
 ## How It Works
 

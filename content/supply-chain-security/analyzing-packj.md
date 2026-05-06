@@ -9,6 +9,8 @@ tags: [python, security, supply-chain-security, npm, pypi, sandboxing, cli, stra
 
 # Analyzing Packj
 
+> **Source:** [ossillate-inc/packj](https://github.com/ossillate-inc/packj) @ [`f5877e7`](https://github.com/ossillate-inc/packj/commit/f5877e7)
+
 ## Orient
 
 Packj (pronounced "package") is an open-source supply chain security tool developed by cybersecurity researchers at Ossillate Inc., originating from a PhD research project at Georgia Tech's CyFI lab. The project's static analysis techniques descend from the [MalOSS](https://github.com/osssanitizer/maloss) academic framework. Backed by NSF and state government grants, Packj has been presented at PyCon US, Black Hat Arsenal (Asia and USA), Open Source Summit Europe, and NullCon. It has identified over 60 malicious packages across PyPI and RubyGems, many of which were subsequently taken down.

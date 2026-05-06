@@ -9,6 +9,8 @@ tags: [go, supply-chain-security, npm, pypi, sandboxing, proxy, cli]
 
 # Analyzing PMG (Package Manager Guard)
 
+> **Source:** [safedep/pmg](https://github.com/safedep/pmg) @ [`d8abfb6`](https://github.com/safedep/pmg/commit/d8abfb6)
+
 ## How It Works
 
 PMG is a supply-chain security tool that intercepts package installations across 10 package managers (npm, pnpm, yarn, bun, npx, pnpx, pip, pip3, uv, poetry) and checks every package for malware before it executes. It does this transparently — you alias `npm` to `pmg npm` and the tool wraps the real package manager, analyzing dependencies via gRPC calls to SafeDep's Malysis threat intelligence API.

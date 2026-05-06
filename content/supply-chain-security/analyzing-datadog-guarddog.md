@@ -9,6 +9,8 @@ tags: [python, security, supply-chain, semgrep, yara, cli]
 
 # Analyzing GuardDog
 
+> **Source:** [DataDog/guarddog](https://github.com/DataDog/guarddog) @ [`5d15a38`](https://github.com/DataDog/guarddog/commit/5d15a38)
+
 ## How It Works
 
 GuardDog is DataDog's open-source CLI tool for detecting malicious packages across six ecosystems: PyPI, npm, Go modules, RubyGems, GitHub Actions, and VSCode extensions. It uses two complementary detection strategies: **source code analysis** via Semgrep rules and YARA signatures, and **metadata analysis** via Python detector classes that examine package registry information.

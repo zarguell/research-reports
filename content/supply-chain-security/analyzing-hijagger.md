@@ -9,6 +9,8 @@ tags: [go, supply-chain-security, npm, pypi, dns, whois, cli]
 
 # Analyzing hijagger
 
+> **Source:** [firefart/hijagger](https://github.com/firefart/hijagger) @ [`ed383fe`](https://github.com/firefart/hijagger/commit/ed383fe)
+
 ## How It Works
 
 Hijagger is a Go CLI tool that systematically scans every package on NPM and PyPI, extracts maintainer email addresses, and checks whether the domain portion of those emails is unregistered or has unregistered MX records. The attack vector is straightforward: if a maintainer's email domain has lapsed, an attacker can register the domain, initiate a password reset on the package registry, and hijack the package to inject malicious code.

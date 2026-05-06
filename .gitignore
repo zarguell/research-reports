@@ -1,0 +1,5 @@
+node_modules/
+quartz-src/
+public/
+*.tsbuildinfo
+.DS_Store

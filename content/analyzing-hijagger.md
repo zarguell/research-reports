@@ -86,5 +86,5 @@ The `app` struct is the central object — it holds HTTP and DNS clients, five m
 
 ## Related
 
-- [[analyzing-phylum-find-supply-chain-vulnerabilities]] — complementary approach to supply chain security using static analysis rather than domain expiration
-- [[analyzing-left-pad-dependency-confusion]] — the class of attack hijagger is designed to detect
+- [[analyzing-datadog-guarddog]] — PyPI supply chain security scanner using static analysis
+- [[analyzing-packj]] — dependency risk analysis tool covering NPM and PyPI

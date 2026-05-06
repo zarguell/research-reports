@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout content repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8645b3ee46e8b8c3a17d1d0f # v4.4.0
+        uses: actions/setup-node@v4
         with:
           node-version: 22
 
@@ -43,7 +43,7 @@ jobs:
         run: cd quartz-src && npx quartz build
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@56afc609c7f6c5b3238c015bff06c345503c3e38 # v3.0.1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: quartz-src/public
 
@@ -56,4 +56,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed8672b6b21d6a6e582a6db6f7eb # v4.0.5
+        uses: actions/deploy-pages@v4

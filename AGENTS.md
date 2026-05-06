@@ -40,7 +40,19 @@ Match the request to one of these types (set in frontmatter `type` field):
 
 ### 3. Write the Report
 
-Create the report at `content/<report-name>.md` with:
+Place the report in the appropriate topic folder under `content/`. Create a new folder if no existing topic fits.
+
+```
+content/
+  supply-chain-security/    ← existing topic
+  machine-learning/         ← create as needed
+  infrastructure/           ← create as needed
+  <topic-name>/
+    <report-name>.md
+  index.md                  ← site homepage (do not move)
+```
+
+**Choosing a topic:** Match the subject matter of the report, not the report type. A codebase analysis of a supply-chain tool goes in `supply-chain-security/`, not a `codebase-analysis/` folder.
 
 **Required frontmatter:**
 ```yaml
@@ -99,7 +111,8 @@ gh pr create --title "Add report: <short title>" --body "## Report: <short title
 
 - Use kebab-case: `analyzing-foo-bar.md`
 - Include a descriptive prefix: `analyzing-`, `market-`, `deep-dive-`, `review-`
-- Example: `analyzing-fastapi-realworld.md`, `market-vector-databases-2026.md`
+- Files go inside topic folders: `content/supply-chain-security/analyzing-hijacker.md`
+- Example: `content/supply-chain-security/analyzing-fastapi-realworld.md`, `content/machine-learning/market-vector-databases-2026.md`
 
 ## Tags Convention
 
@@ -117,7 +130,7 @@ A wikilink linter runs in CI (`.github/workflows/lint.yml`) on every push and PR
 python3 scripts/lint-wikilinks.py
 ```
 
-**When writing reports:** only reference reports that exist in `content/` with `[[wikilinks]]`. Check `ls content/*.md` to see what's available.
+**When writing reports:** only reference reports that exist in `content/` with `[[wikilinks]]`. Wikilinks resolve by filename across all topic folders. Check `find content -name '*.md' | grep -v .obsidian` to see what's available.
 
 ## DO NOT
 

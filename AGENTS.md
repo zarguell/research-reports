@@ -109,9 +109,19 @@ Use existing tags when possible. Check current tags:
 grep -rh "^tags:" content/ | sort -u
 ```
 
+## Linting
+
+A wikilink linter runs in CI (`.github/workflows/lint.yml`) on every push and PR. It verifies all `[[wikilinks]]` in `content/` point to existing files. Run it locally before pushing:
+
+```bash
+python3 scripts/lint-wikilinks.py
+```
+
+**When writing reports:** only reference reports that exist in `content/` with `[[wikilinks]]`. Check `ls content/*.md` to see what's available.
+
 ## DO NOT
 
 - Modify files in `content/.obsidian/`
 - Delete or rename existing reports
-- Fabricate data, citations, findings, or `[[wikilinks]]` to nonexistent reports
+- Fabricate data, citations, or findings
 - Add reports to directories outside `content/`

@@ -12,7 +12,7 @@ This repo is an Obsidian vault of research reports, published as a static site v
 content/           ← Obsidian vault root (this is what Quartz builds from)
   templates/       ← Report templates
   .obsidian/       ← Obsidian config (do not modify)
-Index.md           ← Landing page
+workflows/         ← Per-type methodology guides
 AGENTS.md          ← This file (repo root, not in vault)
 ```
 
@@ -22,12 +22,14 @@ AGENTS.md          ← This file (repo root, not in vault)
 
 Match the request to one of these types (set in frontmatter `type` field):
 
-| Type | When to Use |
-|------|-------------|
-| `codebase-analysis` | Analyzing a codebase — architecture, patterns, quality |
-| `market-research` | Market landscape, competitive analysis, comparisons |
-| `technical-deep-dive` | Focused exploration of a specific topic/framework |
-| `literature-review` | Summarizing papers, docs, or reference material |
+| Type | When to Use | Methodology |
+|------|-------------|-------------|
+| `codebase-analysis` | Analyzing a codebase — how it works, patterns, architecture | `workflows/codebase-analysis.md` |
+| `market-research` | Market landscape, competitive analysis, comparisons | `workflows/market-research.md` |
+| `technical-deep-dive` | Focused exploration of a specific topic/framework | `workflows/technical-deep-dive.md` |
+| `literature-review` | Summarizing papers, docs, or reference material | `workflows/literature-review.md` |
+
+**Before starting, read the relevant workflow file for the detailed methodology.**
 
 ### 2. Research
 

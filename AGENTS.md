@@ -58,7 +58,7 @@ tags: [<relevant, tags>]
 - `## Overview` — what was researched and why
 - `## Key Findings` — the main takeaways (use sub-sections)
 - `## Assessment` — strengths, concerns, recommendations
-- `## Related` — `[[wikilinks]]` to related reports (if any exist)
+- `## Related` — `[[wikilinks]]` to related reports (if any exist). **Only link to reports that actually exist in `content/`.** Check with `ls content/*.md` before writing links. Omit the section entirely if no related reports exist.
 
 **Writing standards:**
 - Write in clear, direct prose. No filler or hedging.
@@ -113,5 +113,5 @@ grep -rh "^tags:" content/ | sort -u
 
 - Modify files in `content/.obsidian/`
 - Delete or rename existing reports
-- Fabricate data, citations, or findings
+- Fabricate data, citations, findings, or `[[wikilinks]]` to nonexistent reports
 - Add reports to directories outside `content/`

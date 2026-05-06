@@ -1,50 +1,64 @@
-import { QuartzLayout } from "./quartz/types"
+import { PageLayout, SharedLayout } from "./quartz/cfg"
+import * as Component from "./quartz/components"
 
-const layout: QuartzLayout = {
-  sharedComponents: {
-    head: Component.Head(),
-    footer: Component.Footer({
-      links: {
-        GitHub: "https://github.com/zarguell/research-reports",
-      },
-    }),
-  },
-  homePage: {
-    frontmatter: {
-      title: "Research Reports",
-      description: "AI-generated research reports by Hermes",
+export const sharedPageComponents: SharedLayout = {
+  head: Component.Head(),
+  header: [],
+  afterBody: [],
+  footer: Component.Footer({
+    links: {
+      GitHub: "https://github.com/zarguell/research-reports",
     },
-    pageComponents: [
-      Component.Flex({
-        children: [
-          Component.Sidebar(),
-          Component.Spacer(),
-          Component.PageList(),
-        ],
-      }),
-      Component.Search(),
-      Component.Darkmode(),
-      Component.Backlinks(),
-    ],
-  },
-  defaultContentPage: {
-    frontmatter: {},
-    pageComponents: [
-      Component.Flex({
-        children: [
-          Component.Sidebar(),
-          Component.Spacer(),
-          Component.Article(),
-        ],
-      }),
-      Component.Search(),
-      Component.Darkmode(),
-      Component.Backlinks(),
-    ],
-  },
-  404: {
-    pageComponents: [Component.NotFound()],
-  },
+  }),
 }
 
-export default layout
+export const defaultContentPageLayout: PageLayout = {
+  beforeBody: [
+    Component.ConditionalRender({
+      component: Component.Breadcrumbs(),
+      condition: (page) => page.fileData.slug !== "index",
+    }),
+    Component.ArticleTitle(),
+    Component.ContentMeta(),
+    Component.TagList(),
+  ],
+  left: [
+    Component.PageTitle(),
+    Component.MobileOnly(Component.Spacer()),
+    Component.Flex({
+      components: [
+        {
+          Component: Component.Search(),
+          grow: true,
+        },
+        { Component: Component.Darkmode() },
+        { Component: Component.ReaderMode() },
+      ],
+    }),
+    Component.Explorer(),
+  ],
+  right: [
+    Component.Graph(),
+    Component.DesktopOnly(Component.TableOfContents()),
+    Component.Backlinks(),
+  ],
+}
+
+export const defaultListPageLayout: PageLayout = {
+  beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
+  left: [
+    Component.PageTitle(),
+    Component.MobileOnly(Component.Spacer()),
+    Component.Flex({
+      components: [
+        {
+          Component: Component.Search(),
+          grow: true,
+        },
+        { Component: Component.Darkmode() },
+      ],
+    }),
+    Component.Explorer(),
+  ],
+  right: [],
+}

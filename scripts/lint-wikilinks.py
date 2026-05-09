@@ -16,12 +16,20 @@ for md_file in CONTENT_DIR.glob("**/*.md"):
         continue
     file_map[md_file.stem] = str(rel)
 
+FENCE_RE = re.compile(r"^\s*```")
+
 errors = []
 for md_file in sorted(CONTENT_DIR.glob("**/*.md")):
     rel = md_file.relative_to(CONTENT_DIR)
     if rel.parts[0] in (".obsidian", "templates"):
         continue
+    in_fence = False
     for line_num, line in enumerate(md_file.read_text().splitlines(), 1):
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         for match in WIKILINK_RE.finditer(line):
             target = match.group(1).strip()
             if target not in file_map:

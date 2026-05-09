@@ -63,14 +63,14 @@ The detection pipeline in `detect.go` is multi-layered:
 Rules are defined in TOML and translated into Go structs:
 
 ```toml
-[[rules]]
+[rules]
 id = "aws-access-token"
 description = "AWS credentials detected"
 regex = '''\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b'''
 entropy = 3.0
 keywords = ["AKIA", "ASIA", "ABIA", "ACCA"]
 
-[[rules.allowlists]]
+[rules.allowlists]
 regexes = ['''.+EXAMPLE$''']
 ```
 

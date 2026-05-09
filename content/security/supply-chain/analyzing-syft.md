@@ -98,8 +98,8 @@ Every `Package` gets an `artifact.ID` computed by hashing its fields (excluding 
 
 ## Related
 
-- analyzing-hijagger
-- analyzing-datadog-guarddog
-- analyzing-packj
-- analyzing-minimal-container-images
-- analyzing-pmg
+- [[analyzing-hijagger]]
+- [[analyzing-datadog-guarddog]]
+- [[analyzing-packj]]
+- [[analyzing-minimal-container-images]]
+- [[analyzing-pmg]]

@@ -7,7 +7,7 @@ source: https://github.com/dependency-check/DependencyCheck
 tags: [java, security, sca, dependency-analysis, owasp, vulnerability-scanning]
 ---
 
-> Source: [dependency-check/DependencyCheck](https://github.com/dependency-check/DependencyCheck) at `cfd3479`
+> **Source:** [dependency-check/DependencyCheck](https://github.com/dependency-check/DependencyCheck) @ [`cfd3479`](https://github.com/dependency-check/DependencyCheck/commit/cfd3479d0b0f240499c1782e377cbbb341b23d4f)
 
 ## How It Works
 

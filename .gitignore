@@ -3,3 +3,4 @@ quartz-src/
 public/
 *.tsbuildinfo
 .DS_Store
+sections-part*.md

@@ -150,6 +150,208 @@ This is the heavyweight end of the spectrum — necessary when your tool is a mu
 > - Need glibc or specific system libs → `*-slim`
 > - Multi-language runtime → enterprise minimal (AlmaLinux, Ubuntu minimal)
 
+
+## Declarative Image Builds with apko
+
+[[analyzing-minimal-container-images|rtvkiz/minimal]] takes a fundamentally different approach to container image construction: instead of writing Dockerfiles, it uses **apko** — Chainguard's declarative image builder. apko reads a YAML config and produces an OCI image directly, with no Dockerfile, no Docker daemon, and no shell in the build process.
+
+### How apko Replaces Dockerfiles
+
+A traditional Dockerfile for a Python image:
+
+```dockerfile
+FROM python:3.14-alpine
+RUN adduser -D -u 65532 nonroot
+WORKDIR /app
+USER nonroot
+ENTRYPOINT ["python3"]
+```
+
+The equivalent apko configuration:
+
+```yaml
+# python/apko/python.yaml
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    - wolfi-baselayout
+    - python-3.14
+    - glibc
+    - glibc-locale-posix
+    - ld-linux
+    - libgcc
+    - libstdc++
+    - libffi
+    - zlib
+    - libssl3
+    - libcrypto3
+    - readline
+    - ncurses
+    - ncurses-terminfo-base
+    - libexpat1
+    - libbz2-1
+    - xz
+    - libzstd1
+    - mpdecimal
+    - sqlite-libs
+    - gdbm
+    - libuuid
+    - ca-certificates-bundle
+
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+  run-as: 65532
+
+entrypoint:
+  command: /usr/bin/python3
+
+work-dir: /app
+
+environment:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+  PYTHONHASHSEED: random
+  LANG: C.UTF-8
+  PATH: /usr/bin:/bin
+
+paths:
+  - path: /app
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o755
+  - path: /tmp
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o1777
+
+annotations:
+  org.opencontainers.image.title: "minimal-python"
+  org.opencontainers.image.description: "Hardened shell-less Python 3 image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.source: "https://github.com/rtvkiz/minimal/tree/main/python"
+  org.opencontainers.image.licenses: "Apache-2.0"
+
+archs:
+  - x86_64
+  - aarch64
+```
+
+**Key differences from Dockerfiles:**
+
+1. **No shell in the build.** apko assembles the filesystem from packages — there is no `RUN` step, no shell execution, no chance for supply chain injection during build
+2. **Every package is explicit.** Unlike a Dockerfile where `apk add python3` pulls in transitive dependencies invisibly, apko requires listing every package. This is the container equivalent of a lockfile
+3. **Non-root is declarative.** User/group configuration is a first-class YAML section, not scattered `RUN adduser` commands
+4. **Multi-arch is a config field.** `archs: [x86_64, aarch64]` — no QEMU, no `docker buildx`, no platform matrix in CI
+5. **OCI annotations are native.** Image metadata lives in the config, not in separate `LABEL` directives
+
+### Building from Source with melange
+
+For applications not available as Wolfi packages, rtvkiz/minimal uses **melange** to build from source:
+
+```yaml
+# redis-slim/melange.yaml
+package:
+  name: redis-minimal
+  version: 8.6.3
+  epoch: 0
+  description: "Minimal Redis server and CLI built from source"
+  copyright:
+    - license: SSPL-1.0
+
+vars:
+  sha256: 58d0d1eb49a1ea6c2179659707fec171b1e2e2b8d5157ed2ec59d1d66ad5a654
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - busybox
+      - ca-certificates-bundle
+      - curl
+      - build-base
+      - linux-headers
+      - openssl-dev
+      - jemalloc-dev
+
+pipeline:
+  - runs: |
+      curl -fsSL --retry 5 --retry-all-errors         "https://github.com/redis/redis/archive/refs/tags/${{package.version}}.tar.gz"         -o /home/build/redis.tar.gz
+      echo "${{vars.sha256}}  /home/build/redis.tar.gz" | sha256sum -c -
+
+  - runs: |
+      cd /home/build/redis-${{package.version}}
+      make -j$(nproc) BUILD_TLS=yes USE_SYSTEMD=no MALLOC=jemalloc
+      make install PREFIX=/home/build/redis-install
+
+  - runs: |
+      mkdir -p "${{targets.destdir}}/usr/bin"
+      cp /home/build/redis-install/bin/redis-server "${{targets.destdir}}/usr/bin/"
+      cp /home/build/redis-install/bin/redis-cli "${{targets.destdir}}/usr/bin/"
+      strip --strip-unneeded "${{targets.destdir}}/usr/bin/redis-server"
+      strip --strip-unneeded "${{targets.destdir}}/usr/bin/redis-cli"
+```
+
+The melange pipeline downloads source with **SHA256 verification**, builds with minimal flags, strips debug symbols, and installs only the needed binaries. The resulting `.apk` package is then consumed by apko.
+
+The apko config for this source-built image references the local melange package:
+
+```yaml
+# redis-slim/apko/redis.yaml
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+    # Local melange-built packages (passed via --repository-append)
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    # Local signing key passed via --keyring-append
+  packages:
+    - wolfi-baselayout
+    - redis-minimal    # Built from source via melange
+    - glibc
+    - glibc-locale-posix
+    - ld-linux
+    - libgcc
+    - libstdc++
+    - libssl3
+    - libcrypto3
+    - libjemalloc2
+    - ca-certificates-bundle
+
+accounts:
+  groups:
+    - groupname: redis
+      gid: 65532
+  users:
+    - username: redis
+      uid: 65532
+      gid: 65532
+  run-as: 65532
+
+entrypoint:
+  command: /usr/bin/redis-server
+```
+
+This two-stage pattern (melange builds packages, apko assembles image) provides the flexibility of source compilation with the reproducibility of declarative configuration.
+
+> [!tip] When to Use apko vs Dockerfile
+> - **Use apko** when your app is available as packages (Wolfi, Alpine) — you get reproducible, shell-less builds with built-in SBOM generation
+> - **Use melange + apko** when you need to build from source but still want declarative image assembly
+> - **Use Dockerfile** when you need complex build-time logic, build arguments, or tooling that doesn't fit the melange pipeline model
+
+
 ## Multi-Stage Build Patterns
 
 Multi-stage builds are the single most important Dockerfile technique for security. They ensure build-time dependencies never reach the runtime image.
@@ -422,6 +624,25 @@ Insomnia uses Kong's shared security action for monorepo-wide SBOM:
     upload-sbom-release-assets: false
 ```
 
+
+### Build-Tool SBOM: [[analyzing-minimal-container-images|rtvkiz/minimal]] (apko)
+
+apko generates SPDX SBOMs natively during image assembly — no separate tool installation or CI step required:
+
+```yaml
+# apko produces sbom-*.spdx.json automatically during build
+# The build workflow extracts version information from the SBOM:
+- name: Extract version from SBOM
+  id: version
+  run: |
+    PRIMARY_PKG=$(grep -oE '${{ matrix.primary_grep }}[a-z0-9.-]*' ${{ matrix.apko_config }} | head -1)
+    VERSION=$(jq -r --arg pkg "$PRIMARY_PKG"       '.packages[] | select(.name == $pkg) | .versionInfo'       sbom-x86_64.spdx.json | head -1)
+    echo "tag=$VERSION" >> $GITHUB_OUTPUT
+```
+
+The SBOM is generated as a side effect of the `apko build` command. The workflow then parses it to extract the primary package version for image tagging — the SBOM is the single source of truth for what went into the image.
+
+
 > [!tip] SBOM Strategy Recommendations
 > - **For published images:** Use OCI referrers (dep-scan's oras approach) so SBOMs travel with the image
 > - **For release artifacts:** Upload as GitHub release assets (Grype's approach)
@@ -604,6 +825,47 @@ Insomnia uses enterprise-grade code signing via DigiCert for Windows binaries:
     SM_API_KEY: ${{ secrets.DIGICERT_SM_API_KEY }}
     SM_CLIENT_CERT_PASSWORD: ${{ secrets.DIGICERT_SM_CLIENT_CERT_PASSWORD }}
 ```
+
+
+### Keyless Cosign Signing: [[analyzing-minimal-container-images|rtvkiz/minimal]]
+
+rtvkiz/minimal signs every published image with cosign using GitHub's OIDC identity — no stored keys, no secret management:
+
+```yaml
+# minimal - build.yml (both build-apko and build-melange jobs)
+- name: Setup cosign
+  if: github.event_name != 'pull_request'
+  uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+
+- name: Sign image with cosign
+  if: github.event_name != 'pull_request'
+  uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+  with:
+    timeout_minutes: 5
+    max_attempts: 3
+    command: |
+      cosign sign --yes         ${{ env.REGISTRY }}/${{ github.repository_owner }}/minimal-${{ matrix.name }}:${{ steps.version.outputs.tag }}
+```
+
+Keyless signing (`--yes` with no `--key`) uses the GitHub Actions OIDC token to sign via Sigstore's Fulcio CA. The signature is recorded in the Rekor transparency log, making it publicly auditable. The `nick-fields/retry` wrapper handles transient registry timeouts — signing 41 images per build means occasional flakes.
+
+For melange-built images, package signing uses an asymmetric key pair:
+
+```yaml
+# melange-build job
+- name: Generate ephemeral signing key
+  if: github.event_name == 'pull_request'
+  run: melange keygen
+
+- name: Setup signing key (protected branch)
+  if: github.event_name != 'pull_request'
+  run: |
+    echo "${{ secrets.MELANGE_SIGNING_KEY }}" > melange.rsa
+    echo "${{ secrets.MELANGE_SIGNING_KEY_PUB }}" > melange.rsa.pub
+```
+
+PRs use ephemeral keys (generated per-run); the main branch uses stored secrets. This ensures PR builds are reproducible without exposing production signing keys.
+
 
 > [!tip] Signing Approach Selection
 > - **Open source / CI-native:** Cosign with keyless signing (free, transparent, Sigstore-backed)
@@ -959,6 +1221,164 @@ Good: links to the vulnerability, explains why it's safe to ignore. Missing: no 
 > 3. **When** will it be fixed? (next base image bump, upstream patch)
 > 4. **Who** is responsible? (implicit: the team that added the exception)
 
+## Continuous CVE Remediation: Rebuild Cadence and Automation
+
+Most projects scan for vulnerabilities and file tickets. [[analyzing-minimal-container-images|rtvkiz/minimal]] eliminates them by rebuilding from patched sources every 6 hours.
+
+### Scheduled Rebuilds
+
+The build workflow triggers on four events, with schedule as the primary CVE remediation mechanism:
+
+```yaml
+# minimal - build.yml
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*/apko/*.yaml'
+      - '*/melange.yaml'
+      - '*/test.sh'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [main]
+  schedule:
+    # Rebuild every 6 hours to keep images and vulnerability counts fresh
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+```
+
+On scheduled builds, every image is rebuilt regardless of changes. This means:
+- **Wolfi packages** get patched within 24-48 hours of upstream CVE disclosure
+- **Source-built images** (via melange) recompile from the same versioned tarball but with updated build dependencies
+- **Grype scans** run on every rebuild, and results are published to a GitHub Pages vulnerability dashboard
+
+The concurrency configuration prevents wasted runs:
+
+```yaml
+concurrency:
+  group: build-${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+```
+
+### Change Detection for Push Builds
+
+For push-triggered builds, the workflow detects which images changed and only rebuilds those:
+
+```yaml
+EVENT="${{ github.event_name }}"
+FULL_REBUILD=false
+
+if [[ "$EVENT" == "schedule" ]] || [[ "$EVENT" == "workflow_dispatch" ]]; then
+  FULL_REBUILD=true
+else
+  CHANGED_FILES=$(git diff --name-only "$DIFF_BASE" "${{ github.sha }}" 2>/dev/null)
+  if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/build\.yml$"; then
+    FULL_REBUILD=true
+  fi
+fi
+
+if [ "$FULL_REBUILD" = true ]; then
+  CHANGED=$(echo "$MELANGE_IMAGES $APKO_IMAGES" | jq -s 'add | [.[].name]')
+else
+  CHANGED=$(echo "$CHANGED_FILES" | grep -E '^[^./][^/]*/' | sed 's|/.*||' | sort -u | jq -R . | jq -s .)
+fi
+```
+
+### Automated Version Update Pipelines
+
+rtvkiz/minimal has **30 dedicated update workflows** — one per source-built image. Each runs daily, checks for new upstream versions, and opens a PR:
+
+```yaml
+# .github/workflows/update-redis.yml
+name: Update Redis Version
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Generate app token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Check for new Redis stable version
+        id: check
+        run: |
+          LATEST=$(curl -sS --retry 3 "https://download.redis.io/releases/" |             grep -oE 'redis-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz' |             grep -oE '[0-9]+\.[0-9]+\.[0-9]+' |             sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+
+          CURRENT=$(grep '^  version:' redis-slim/melange.yaml | awk '{print $2}')
+
+          if [ "$LATEST" != "$CURRENT" ]; then
+            echo "update_available=true" >> $GITHUB_OUTPUT
+            echo "new_version=$LATEST" >> $GITHUB_OUTPUT
+            echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version and checksum
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.new_version }}"
+          curl -fsSL "https://github.com/redis/redis/archive/refs/tags/${VERSION}.tar.gz" -o /tmp/redis.tar.gz
+          SHA256=$(sha256sum /tmp/redis.tar.gz | awk '{print $1}')
+
+          sed -i "s/^  version: .*/  version: $VERSION/" redis-slim/melange.yaml
+          sed -i "s/^  sha256: .*/  sha256: $SHA256/" redis-slim/melange.yaml
+          sed -i "s/^  epoch: .*/  epoch: 0/" redis-slim/melange.yaml
+
+      - name: Create PR and enable auto-merge
+        if: steps.check.outputs.update_available == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH="update-redis-${{ steps.check.outputs.new_version }}"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore(redis): bump to ${{ steps.check.outputs.new_version }}"
+          git push --force -u origin "$BRANCH"
+          PR_URL=$(gh pr create             --title "chore(redis): bump to ${{ steps.check.outputs.new_version }}"             --label dependencies --label redis             --body "Updates Redis to ${{ steps.check.outputs.new_version }}")
+          gh pr merge "$PR_URL" --auto --squash --delete-branch
+```
+
+Key elements of the update pattern:
+
+1. **GitHub App token** — PRs created by the app token don't trigger nested workflows, avoiding infinite loops
+2. **SHA256 verification** — The checksum is updated alongside the version, so melange verifies tarball integrity at build time
+3. **Epoch reset** — `epoch: 0` for new upstream versions; increment epoch only for in-house patches
+4. **Auto-merge** — `gh pr merge --auto --squash` queues the PR for merge once CI passes
+
+### Published Vulnerability Dashboard
+
+Every scheduled rebuild publishes an HTML vulnerability report to GitHub Pages:
+
+```yaml
+# minimal - build.yml (publish-vuln-report job)
+- name: Generate HTML report
+  run: |
+    for f in reports/grype-*.json; do
+      NAME=$(basename "$f" .json | sed 's/^grype-//')
+      C=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' "$f")
+      H=$(jq '[.matches[] | select(.vulnerability.severity == "High")] | length' "$f")
+      # Build styled HTML table rows...
+    done
+```
+
+This gives a public, continuously-updated view of vulnerability counts across all 41 images.
+
+> [!tip] Rebuild vs. Scan-and-Ticket
+> - **Rebuild approach** (rtvkiz/minimal): Patch the source and rebuild. CVEs disappear when the package is updated. Requires daily rebuild infrastructure.
+> - **Scan-and-ticket approach** (most projects): Scan the image, file issues for CVEs. Faster to implement but vulnerabilities persist until someone acts.
+> - **Hybrid**: Rebuild on schedule (catches dependency CVEs) + scan on push (catches code CVEs). This is what rtvkiz/minimal actually does.
+
+
 ## Putting It All Together — Reference Dockerfile
 
 Synthesizing the best patterns from all 13 codebases into a single annotated reference Dockerfile for a Node.js application:
@@ -1073,5 +1493,8 @@ Checkov and dep-scan use single-stage builds despite having complex build requir
 ## Related
 
 - [[best-cicd-implementations-reference-guide]] — CI/CD pipeline patterns from the same codebases
-- [[analyzing-minimal-container-images]] — Deep dive on distroless and scratch-based images
+- [[analyzing-minimal-container-images]] — Deep dive on rtvkiz/minimal: 41 hardened images, apko/melange builds, daily CVE rebuilds, cosign signing
 - [[analyzing-trivy]] — Trivy vulnerability scanner analysis
+- [[analyzing-grype]] — Grype vulnerability scanner with SBOM-based matching
+- [[analyzing-threat-dragon]] — 4-stage Dockerfile, DAST with ZAP, Trivy scanning
+- [[analyzing-ocis]] — Non-root containers, .trivyignore management, Drone+GHA dual CI

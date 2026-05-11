@@ -4,3 +4,4 @@ public/
 *.tsbuildinfo
 .DS_Store
 sections-part*.md
+extraction-data.json

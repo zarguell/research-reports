@@ -1,150 +1,112 @@
 ---
-title: "AI Coding Agent Index & Performance Analysis"
+title: "Analyzing Artificial Analysis Coding Agent Index"
 date: 2026-05-12
-type: market-research
+type: technical-deep-dive
 status: complete
-tags: [ai-agents, coding-assistant, market-research, benchmark, swebench, cursor, claude-code, copilot, aider, cline]
+source: https://artificialanalysis.ai/agents/coding-agents
+tags: [ai-agents, coding-assistant, benchmark, swebench, terminal-bench, artificial-analysis, cursor, claude-code, codex, opencode]
 ---
 
 ## Overview
 
-The AI coding agent market has become the fastest-growing segment in developer tooling history. As of early 2026, the market is worth $12.8 billion, with 84–91% of professional developers using AI coding tools daily and 51% of all code committed to GitHub being AI-generated or AI-assisted. This report indexes the major players, compares their benchmark performance, pricing, and market position, and analyzes the real trade-offs behind the selection decision.
+Artificial Analysis (artificialanalysis.ai) publishes a **Coding Agent Index** — one of the few benchmarks that evaluates coding agents as complete systems (harness + model) rather than models in isolation. This report analyzes their methodology, what their data actually shows, and where the index is and isn't useful for tool selection.
 
-## Landscape
-
-The field has fractured into five recognizable categories:
-
-- **Closed IDE forks** — Cursor, Windsurf: VS Code forks with deep AI integration
-- **Terminal-native agents** — Claude Code, Aider, Codex CLI, Gemini CLI, OpenCode: CLI-first, model-agnostic (except Claude Code)
-- **VS Code extensions** — Cline, Roo Code, Kilo Code, Continue.dev: bring-your-own-key extensions inside existing VS Code
-- **Enterprise platforms** — GitHub Copilot, Amazon Q, JetBrains AI: deep organizational integration
-- **Autonomous agents** — Devin, Replit Agent: hands-off task delegation
-
-The top three — GitHub Copilot, Cursor, and Claude Code — hold over 70% combined market share. Revenue concentration is extreme: Claude Code reportedly hit $2.5B ARR and Cursor reached $2B ARR by early 2026, while most other tools remain under $100M.
-
-### Market Share (Feb 2026)
-
-- Cursor: 31% (down from 34% in Mar 2025)
-- GitHub Copilot: 24% (down from 28%)
-- Claude Code: 22% (up from 12%)
-- Windsurf: 8% (up from ~3%)
-- JetBrains AI: 4% (new entrant)
-- Other/None: 11%
-
-> [!note] 53% of developers now use 2+ AI coding tools. The most common combination: Cursor + Claude Code (14% of all respondents).
-
-## Comparison
-
-### Benchmark Performance
-
-SWE-bench has become the de facto standard for evaluating coding agents, though the field is learning its limitations. Verified (500 tasks) is approaching saturation; Pro (1,865 tasks) is the emerging gold standard.
-
-**SWE-bench Verified (model-level, mini-SWE-agent, April 2026):**
-
-- Claude Opus 4.7: 87.6%
-- GPT-5.5: 82.6%
-- Claude Opus 4.5: 80.9%
-- GPT-5.2: 80.0%
-- MiniMax M2.5: 80.2%
-- DeepSeek V4: 76.2%
-
-**SWE-bench Pro (agent-system level, harder tasks, May 2026):**
-
-- Claude Mythos Preview: 77.8%
-- GPT-5.3 Codex (CLI): 57.0%
-- Claude Code (Opus 4.5): 55.4%
-- Auggie (Opus 4.5): 51.8%
-- Cursor (Opus 4.5): 50.2%
-- GPT-5.4 (xHigh): 59.1% (SEAL standardized)
-
-> [!warning] The gap between Verified and Pro is enormous — the same model scoring 80%+ on Verified drops to 23–46% on Pro. Verified is contaminated; Pro is contamination-resistant by design. Use Pro numbers for real-world expectations.
-
-### Agent Comparison Matrix
-
-**Form Factor & License:**
-
-- **Cursor** — VS Code fork, proprietary, $20/mo Pro. Best-in-class inline editing, Composer 2 agent mode, 72% completion acceptance rate. 360K+ paying users.
-- **Claude Code** — Terminal CLI, source-available, $20–200/mo. Highest reasoning quality. 1M context window on Opus 4.7. Deepest MCP integration. Model-locked to Claude.
-- **GitHub Copilot** — IDE extension, proprietary, $10–39/mo. Largest user base (20M+). Strongest enterprise features. Agent Mode catching up.
-- **Cline** — VS Code extension, Apache 2.0, free + API costs. Human-in-the-loop approval for every action. 61K GitHub stars, 4M+ installs. Model-agnostic.
-- **Aider** — Terminal CLI, Apache 2.0, free + API costs. Git-native auto-commits. Architect/editor split. 44K stars. Supports 75+ providers. Writes ~70% of its own code.
-- **OpenCode** — Terminal + desktop + IDE, MIT, free + API costs. Highest GitHub stars (128K). 75+ providers. Client/server architecture.
-- **Continue.dev** — VS Code + JetBrains, Apache 2.0, free + API costs. Only agent supporting both VS Code and JetBrains natively. 501 contributors — highest contributor density.
-- **Windsurf** — VS Code fork, proprietary, $15/mo Pro. Cascade agent. Acquired by Google ($2.4B acqui-hire). Best value at $15/mo.
-- **Codex CLI** — Terminal, open-source, free + API costs. 67K stars. Cloud-isolated task execution. 240+ tok/s.
-- **Devin** — Cloud agent, proprietary, $20/mo + $2.25/ACU. Most autonomous. 67% PR merge rate on defined tasks.
-
-### Pricing Comparison
-
-- **$0 (BYOK):** Aider, Cline, OpenCode, Continue, Codex CLI, Gemini CLI, Roo Code, Kilo Code
-- **$10/mo:** GitHub Copilot Pro
-- **$15/mo:** Windsurf Pro
-- **$20/mo:** Cursor Pro, Claude Code (Pro tier), GitHub Copilot Pro+
-- **$39/mo:** GitHub Copilot Pro+
-- **$60/mo:** Cursor Pro+
-- **$100–200/mo:** Claude Code Max tiers, Cursor Ultra
-
-### Developer Satisfaction (Feb 2026 survey, 400 respondents)
-
-- Claude Code: 84% satisfied (56% "very satisfied")
-- Windsurf: 78% satisfied
-- Cursor: 78% satisfied
-- JetBrains AI: 73% satisfied
-- GitHub Copilot: 52% satisfied (18% "dissatisfied" — lowest)
+The index is live and frequently updated. The data discussed here reflects the state as of May 2026.
 
 ## Key Findings
 
-### Finding 1: Model Choice Matters More Than Tool Choice
+### The Index Composition — Three Complementary Benchmarks
 
-Cline's task success rate varied from 58% (GPT-4o) to 79% (Claude 3.5 Sonnet) depending on the model. Claude Code's 82% first-try success rate is partly the tool, mostly Opus 4.7. The practical implication: pair any decent agent scaffold with a frontier model and you get comparable results to the market leaders.
+The composite score averages pass@1 across three benchmarks:
 
-### Finding 2: SWE-bench Verified Is Saturated — Watch Pro Instead
+- **SWE-Bench-Pro-Hard-AA** (150 questions) — code generation and bug-fixing on tasks not in public training data
+- **Terminal-Bench v2** (84 questions) — agentic terminal use: shell navigation, multi-step CLI workflows, error recovery
+- **SWE-Atlas-QnA** (124 questions) — technical Q&A testing repository understanding and architectural reasoning
 
-Claude Opus 4.7 hit 87.6% on Verified. Claude Mythos Preview hit 93.9%, effectively solving the benchmark (audits suggest ~40% of remaining "failures" are broken tests, not model limitations). Meanwhile, Pro scores sit at 23–59% — a 30+ point gap. Verified rewards scaffolding and potential training-data contamination; Pro tests genuine generalization with copyleft-licensed and proprietary code.
+This is a deliberate design choice. Each benchmark stresses a different capability: writing patches, navigating a shell, and understanding codebases. An agent can score well on one and poorly on another, which is why AA explicitly recommends reading per-benchmark breakdowns rather than relying solely on the composite.
 
-### Finding 3: Open Source Is Winning on Adoption
+> [!tip] This three-benchmark approach is genuinely better than SWE-bench Verified alone. Verified tests one thing (Python bug-fix patches) on potentially contaminated data. AA's mix covers implementation, terminal workflows, and codebase comprehension — closer to what real developers do.
 
-By GitHub stars: OpenCode (128K), Gemini CLI (99K), Claude Code (81K), OpenHands (70K), Codex (67K), Cline (61K), Aider (44K). Five of the top six are open source. But contributor density tells a different story — Continue (15.7 contributors/1K stars) and Goose (12.0) show the healthiest community engagement, while Claude Code (0.6) is effectively closed development with public source.
+### What the Index Actually Measures — Harnesses, Not Just Models
 
-### Finding 4: The Multi-Tool Standard
+The most important insight from AA's work is their **harness comparison**, which holds the model constant (Claude Opus 4.7) and compares performance across different agent frameworks:
 
-53% of developers now use 2+ tools. The winning pattern: Cursor or Windsurf for IDE-integrated daily work, Claude Code for complex multi-file reasoning and autonomous refactors, and a BYOK tool (Aider/Cline) for budget control or specific workflows. No single tool covers all use cases well.
+**Same model, different harness → dramatically different results.**
 
-### Finding 5: Revenue Growth Is Unprecedented
+Independent studies confirm this:
 
-Cursor went from $0 to $1B ARR in 24 months. Claude Code went from $0 to $2.5B ARR in ~5 months. GitHub Copilot generates ~$2B ARR. The entire category reached $12.8B in 2026. This is the fastest category creation in software history — faster than cloud infrastructure, faster than mobile.
+- Claude Opus scored 77% in Claude Code vs 93% in Cursor — a 16-point swing from harness tuning alone
+- CORE-Bench found Claude Opus went from 42% (minimal scaffold) to 78% (full Claude Code harness) — a 36-point range
+- Across multiple studies, harness quality produces a **5 to 40 percentage point spread** on identical models
 
-### Finding 6: The Autonomy Spectrum Is the Real Decision Axis
+This is the key finding that most commentary misses. The benchmark isn't measuring "which model is smartest" — it's measuring the combined system of scaffolding, tool descriptions, system prompts, and context management. Cursor reportedly employs people whose full-time job is rewriting system prompts and tool descriptions every time a new model ships.
 
-Tools cluster along a supervision axis: supervised pair-programming (Cursor, Claude Code, Cline) → semi-autonomous (Codex Desktop, Windsurf Cascade) → fully autonomous (Devin, Replit Agent). Most engineering teams in 2026 still default to supervised. Fully autonomous agents require strong eval and rollback discipline that most teams lack.
+### Token Usage and Cost — The Hidden Variable
+
+AA tracks four cost dimensions:
+
+- **Input tokens** (non-cached) — prompts, instructions, tool/task context
+- **Cached input tokens** — reused prompt tokens billed through provider caching
+- **Output tokens** — model's visible response
+- **Cache hit rate variability** — some providers route across backend replicas that don't share cache state, materially changing effective cost
+
+> [!warning] Cache hit rates are a real problem. AA explicitly notes they do NOT add relay headers or affinity controls to force higher cache reuse, making results "representative of typical user setups." This means the same agent can cost significantly different amounts depending on provider routing — a factor no pricing page will tell you.
+
+The cost data reveals that Claude Code consumes **3–4x more tokens per task** than Codex CLI for equivalent work. At API rates, this compounds fast. A subscription masks this, but heavy users on Max plans still hit caps.
+
+### Execution Time — What's Measured and What's Not
+
+AA measures agent wall-clock runtime only: reasoning time, tool calls, file I/O, shell execution, model response waiting. It explicitly excludes environment startup, verifier/judge time, and harness overhead.
+
+This is fair for comparing agents against each other, but underrepresents the real-world time developers experience. Environment startup and harness initialization can add 30–60 seconds per session that don't show up in the benchmark.
+
+### Partial Credit and Rubric Scoring
+
+SWE-Atlas-QnA uses rubric-based scoring with partial credit, not binary pass/fail. This matters because:
+
+- A task counts as "solved" only when it **passed AND received a positive score**
+- Partial credit captures useful progress that strict pass-fail would miss
+- An agent that gets 70% of the way on hard tasks may score similarly to one that fully solves easy tasks — the composite doesn't distinguish these patterns
+
+### The Model-Level Coding Index (Separate from Agent Index)
+
+AA also publishes a model-level **Coding Index** (415 models evaluated) that differs from the agent index. Top scores as of May 2026:
+
+- GPT-5.5 (xhigh): 59.1
+- GPT-5.4 (xhigh): 57.3
+- Gemini 3.1 Pro Preview: 55.5
+- Claude Opus 4.7 (Non-reasoning, High): 53.1
+- GPT-5.3 Codex (xhigh): 53.1
+
+> [!note] Claude Opus 4.7 scores higher in non-reasoning mode (53.1) than adaptive reasoning (52.5) on the Coding Index. This is counterintuitive — reasoning should help — and suggests the benchmark's tasks may favor speed and directness over chain-of-thought deliberation.
+
+**Best value:** DeepSeek V4 Flash (Reasoning, Max) at $0.175/M tokens scores 38.7 — roughly 2/3 of GPT-5.5's performance at 1/64th the cost. For budget-sensitive workloads, this is the standout data point.
 
 ## Assessment
 
 ### Strengths
 
-- The market has matured rapidly: real products, real revenue, real benchmarks
-- Open-source options are viable — Aider + Claude API delivers parity with Cursor on most tasks
-- MCP (Model Context Protocol) is becoming table stakes, enabling agent extensibility
-- Multi-agent workflows (background agents, parallel sessions) shipped across all major tools in Feb 2026
+- **Multi-benchmark composite** is more informative than any single benchmark. Testing patches, terminal workflows, and codebase understanding separately reveals genuine capability differences.
+- **Harness isolation** (holding model constant) is the most valuable contribution. It proves that the agent framework matters as much as the model — sometimes more.
+- **Cost transparency** with cache hit rate analysis exposes a real-world variable that other benchmarks ignore.
+- **Methodology honesty** — AA is explicit about limitations, partial credit semantics, and why the index shouldn't be treated as a timeless absolute score.
 
 ### Concerns
 
-- **Benchmark contamination.** SWE-bench Verified scores are inflated by potential training-data overlap. The 30+ point drop to Pro is the contamination tax.
-- **Lock-in risk.** Cursor's credit-pool pricing makes heavy usage unpredictable. Claude Code is model-locked. Enterprise contracts create organizational inertia.
-- **The productivity paradox.** A July 2025 METR study found experienced developers using AI tools completed tasks 19% slower, even as they believed they were 20% faster. The benchmark scores don't capture this.
-- **Aider's velocity.** 25 commits/month vs. 600+ for OpenCode/Codex. A single maintainer (Paul Gauthier) built something remarkable, but can't outship Google and OpenAI. The community is worried.
+- **The page is JS-rendered with interactive charts** — the actual numeric scores are not available in a static, citable format. You can't link to a specific agent's score at a point in time. This undermines reproducibility.
+- **Limited agent coverage** — the harness comparison currently covers Claude Code, Cursor, and OpenCode. Aider, Cline, Continue, Devin, and others are absent. The model-level index covers 415 models, but the agent-level data is sparse.
+- **No longitudinal tracking** — scores update as agents improve, but there's no versioned history. A score you cite today may be different tomorrow with no changelog.
+- **Equal weighting is arbitrary** — the three benchmarks contribute equally to the composite, but they have very different task counts (150, 84, 124) and difficulty levels. A simple average may not reflect real-world task distributions.
+- **Terminal-Bench dominance** — for teams whose workflow is primarily IDE-based (not terminal), the Terminal-Bench v2 component overweights a capability they may not need.
 
-### Recommendations
+### What the Index Gets Right That Others Don't
 
-- **For senior engineers in complex codebases:** Claude Code Pro/Max ($20–100/mo) with Opus 4.7. Pair with Cursor for IDE work.
-- **For teams standardizing on one tool:** Cursor Business ($40/seat) or GitHub Copilot Enterprise ($39/seat). Cursor for feature velocity; Copilot for compliance and Microsoft ecosystem.
-- **For budget-conscious developers:** Aider or Cline (free) + Claude API. Comparable output quality at fraction of subscription cost.
-- **For enterprise compliance:** GitHub Copilot Enterprise (IP indemnification, SOC 2) or Tabnine (air-gapped deployment).
+Most coding benchmarks measure models. SWE-bench Verified measures models. LiveCodeBench measures models. AA's Coding Agent Index measures **systems** — the harness, the prompts, the tool descriptions, the context management, the error recovery. That's what developers actually deploy. The data proves this matters: up to 40 points of performance come from the harness, not the model.
 
-What would change my mind: if SWE-bench Pro scores cross 70% (from current ~59%), that signals genuine autonomous capability. If open-source models (DeepSeek V4, Qwen3) close the gap to <5 points on Pro, the BYOK tools become the obvious choice. If Cursor's credit pricing stabilizes into transparent per-token billing, it becomes the clear single-tool default.
+The three-benchmark split also forces honest assessment. An agent that aces SWE-Bench-Pro-Hard-AA but fails Terminal-Bench is telling you something important about its real-world autonomy. The composite masks this, but the per-benchmark breakdown reveals it.
 
 ## Related
 
 - [[analyzing-hermes-agent]]
 - [[analyzing-claude-octopus]]
-- [[analyzing-bifrost]]
+- [[comparing-bifrost-vs-litellm]]

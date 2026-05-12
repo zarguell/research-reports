@@ -156,12 +156,8 @@ These group repos by language and compare idiomatic patterns.
 ### 12. ~~Documentation-as-Code Patterns~~ ✅ DONE
 - **Report:** `content/devsecops/documentation-as-code-patterns-reference-guide.md`
 
-### 13. Dependency Management Strategies
-- Automated dependency updates: Renovate vs Dependabot vs custom (Checkov's pipenv-update)
-- Lock file handling across languages
-- Vulnerability response workflows
-- Dependency pinning vs ranges philosophies
-- Supply chain attestation
+### 13. ~~Dependency Management Strategies~~ ✅ DONE
+- **Report:** `content/devsecops/dependency-management-strategies-reference-guide.md`
 
 ---
 

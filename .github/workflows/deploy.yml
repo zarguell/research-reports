@@ -27,7 +27,7 @@ jobs:
           node-version: 24
 
       - name: Clone Quartz
-        run: git clone --depth 1 https://github.com/jackyzha0/quartz.git quartz-src
+        run: git clone --depth 1 --branch v4.5.2 https://github.com/jackyzha0/quartz.git quartz-src
 
       - name: Install Quartz dependencies
         run: cd quartz-src && npm ci

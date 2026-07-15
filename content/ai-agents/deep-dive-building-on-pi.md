@@ -131,17 +131,24 @@ No `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls` tools unless you need t
 
 ### Step 5: Add Persistence
 
-Pi's session system stores conversations as JSONL files. For a server, swap to SQLite:
+Pi's session system stores conversations as JSONL files. You have two paths, and neither is wrong:
 
-```typescript
-interface SessionStore {
-  load(sessionId: string): Promise<AgentContext>;
-  save(sessionId: string, messages: AgentMessage[]): Promise<void>;
-  list(): Promise<SessionSummary[]>;
-}
-```
+**A) Keep JSONL — read-only parse on query.** Pi already writes append-only JSONL as the canonical log. You parse it into whatever format you need at read time (session list, search, export). No dual-write, no sync, no migration. Streaming-parseable by design. Works until you need cross-session search at scale.
 
-Wire it into the agent loop via `AgentOptions` — the `transformContext` hook lets you inject stored state before each turn.
+**B) Write to SQLite.** Better for indexed queries — search across sessions, tag filters, usage analytics, user-specific history paging. Pi's session format maps trivially to `sessions` + `messages` tables. You own the schema so you can add metadata columns your platform needs.
+
+The decision:
+
+| | JSONL | SQLite |
+|---|---|---|
+| Write path | Append-only (single syscall) | INSERT (WAL, still fast) |
+| Read path | Parse + filter at query time | Indexed queries |
+| Cross-session search | `grep -l` or streaming parser | `SELECT WHERE` |
+| Schema changes | No-op (you control the parser) | Migration required |
+| Backup | `cp` the file | `sqlite3 .backup` |
+| When to choose | 1 user, linear sessions | Multi-user, search, dashboards |
+
+**Don't dual-write.** Pick one. JSONL is simpler and you get Pi's existing session manager for free. SQLite gives you queryability but means you own the write path. Either way, wire it through `AgentOptions.transformContext` to inject stored state before each turn.
 
 ## What This Enables
 

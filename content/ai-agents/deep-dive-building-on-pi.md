@@ -12,6 +12,8 @@ tags: [typescript, ai-agent, architecture, pi, platform-engineering]
 
 [Pi](https://github.com/earendil-works/pi) is not a product — it's an **agent engine SDK** that ships as a coding agent CLI. The CLI is the demo, not the point. The real value is the three packages under the hood:
 
+> **Pinned reference:** This analysis is based on [`earendil-works/pi` @ `dcfe36c`](https://github.com/earendil-works/pi/commit/dcfe36c79702ec240b146c45f167ab75ecddd205) (≈ v0.80.7). Package names, export surfaces, and hook semantics may differ on later versions — pin the commit when forking.
+
 | Package | What it gives you |
 |---|---|
 | `@earendil-works/pi-agent-core` | Agent class, agent loop, session management, compaction, tool execution |
@@ -143,6 +145,32 @@ interface SessionStore {
 
 Wire it into the agent loop via `AgentOptions` — the `transformContext` hook lets you inject stored state before each turn.
 
+### Step 6: Hooks and Security Model
+
+Pi's lifecycle hooks fire in a specific order around each tool call:
+
+1. `beforeToolCall` — fires **before** the tool executes. This is your policy enforcement point: approve/deny based on tool name, parameters, user context, or budget. Block the call here if it fails policy.
+2. *tool executes*
+3. `afterToolCall` — fires **after** the tool returns. This is an inspection/transformation point: redact sensitive fields from the result, log usage, audit decisions, or transform the output before it reaches the LLM. Never use it as the primary authorization control — by the time it fires, the tool already ran.
+
+```typescript
+const agent = new Agent({
+  streamFn: streamSimple,
+  agentHooks: {
+    beforeToolCall: async (toolCall, ctx) => {
+      // Policy enforcement — return false to deny
+      return policy.check(toolCall.name, toolCall.params, ctx.user);
+    },
+    afterToolCall: async (result, ctx) => {
+      // Inspection / redaction / audit — tool already ran
+      return redactSensitiveFields(result);
+    },
+  },
+});
+```
+
+The distinction matters because `afterToolCall` cannot prevent the tool's side effects — it can only filter what the LLM sees. A platform that relies on `afterToolCall` for security has already lost.
+
 ## What This Enables
 
 | Build | Fork scope | Tools | Server | Persistence | ~Effort |
@@ -167,6 +195,7 @@ Wire it into the agent loop via `AgentOptions` — the `transformContext` hook l
 - You need a custom agent with your own domain tools and you don't want to reinvent the loop
 - You want multi-channel delivery (web + Telegram + Slack) sharing one agent backend
 - You want to vendor the agent loop for stability (pin a Pi version, control upgrades)
+- **You cannot express a required change through Pi's public APIs, configuration, tools, or hooks — and you accept responsibility for rebasing security fixes and provider updates**
 
 **Don't do it when:**
 - Pi's CLI already does what you need (why build?)

@@ -131,24 +131,54 @@ No `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls` tools unless you need t
 
 ### Step 5: Add Persistence
 
-Pi's session system stores conversations as JSONL files. You have two paths, and neither is wrong:
+Persistence isn't one knob. The agent loop emits events and executes tools — both are hooks where data can land anywhere. There are three patterns, each right for different data.
 
-**A) Keep JSONL — read-only parse on query.** Pi already writes append-only JSONL as the canonical log. You parse it into whatever format you need at read time (session list, search, export). No dual-write, no sync, no migration. Streaming-parseable by design. Works until you need cross-session search at scale.
+**A) Pi's native JSONL.** The coding agent already writes append-only JSONL as the canonical session log. You parse it on read. No dual-write, no sync, no migration. Streaming-parseable by design. Best for: session history when you don't need cross-session queries.
 
-**B) Write to SQLite.** Better for indexed queries — search across sessions, tag filters, usage analytics, user-specific history paging. Pi's session format maps trivially to `sessions` + `messages` tables. You own the schema so you can add metadata columns your platform needs.
+**B) Dedicated session DB (SQLite, Postgres).** Indexed queries, search across sessions, tag filters, user-specific history paging. You own the schema so you add metadata columns. Pi's `transformContext` hook injects stored state before each turn. Best for: multi-user, dashboards, any platform that surfaces history.
 
-The decision:
+**C) Event/tool-driven persistence.** The agent loop emits `AgentEvent` objects (`message_start`, `turn_end`, `tool_result`, etc.). Subscribe to the event stream and persist whatever subset you want, wherever you want — Postgres with RLS, Kafka, S3, a webhook. Tools themselves can also write to a DB as part of execution:
 
-| | JSONL | SQLite |
-|---|---|---|
-| Write path | Append-only (single syscall) | INSERT (WAL, still fast) |
-| Read path | Parse + filter at query time | Indexed queries |
-| Cross-session search | `grep -l` or streaming parser | `SELECT WHERE` |
-| Schema changes | No-op (you control the parser) | Migration required |
-| Backup | `cp` the file | `sqlite3 .backup` |
-| When to choose | 1 user, linear sessions | Multi-user, search, dashboards |
+```typescript
+// Tool persists directly to app DB with RLS
+const submitExpense = defineTool({
+  name: "submit_expense",
+  execute: async (id, params, signal, onUpdate, ctx) => {
+    await db.expenses.insert({
+      amount: params.amount,
+      category: params.category,
+      userId: ctx.session.userId,  // from your auth layer
+    });
+    // Postgres RLS enforces tenant isolation —
+    // the agent never needs to think about it.
+    return { content: [{ type: "text", text: "Expense saved" }] };
+  },
+});
 
-**Don't dual-write.** Pick one. JSONL is simpler and you get Pi's existing session manager for free. SQLite gives you queryability but means you own the write path. Either way, wire it through `AgentOptions.transformContext` to inject stored state before each turn.
+// Event hook persists conversation metadata
+agent.on("turn_end", async (event) => {
+  await db.sessions.upsert({
+    id: event.sessionId,
+    turnCount: event.turnCount,
+    lastModel: event.model.id,
+  });
+});
+```
+
+This is where RLS, audit logs, billing records, and domain-specific data live. The agent loop doesn't need to know about any of it.
+
+| | JSONL | Session DB (SQLite/PG) | Event/Tool-driven |
+|---|---|---|---|
+| What persists | Full conversation | Full conversation + metadata | Selective — whatever a tool or hook writes |
+| Write path | Append-only | INSERT | Any backend, any schema |
+| Read path | Parse + filter | Indexed queries | Via your app's normal data layer |
+| Cross-session search | Grep or streaming parser | `SELECT WHERE` | Your app queries its own tables |
+| Schema changes | No-op | Migration | Your app's normal migration |
+| RLS / auth | Not applicable | Application-level | **Natively** (Postgres RLS, etc.) |
+| Audit trail | Full log | Full log | Whatever the hook captures |
+| When to use | 1 user, linear sessions | Multi-user, search, dashboards | Domain data, compliance, multi-tenant |
+
+You'll likely use all three — JSONL as Pi's native write path, a session DB for the history UI, and event/tool-driven persistence for the data your platform actually owns. They're not alternatives; they serve different purposes.
 
 ## What This Enables
 

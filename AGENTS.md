@@ -85,7 +85,7 @@ tags: [<relevant, tags>]
 **Do NOT push directly to `main`.** Each report gets its own branch and pull request for review.
 
 ```bash
-cd /opt/data/repos/research-reports
+# run from the repo root (e.g. ~/workspace/research-reports)
 git checkout main
 git pull
 BRANCH="report/<report-name>"
@@ -130,7 +130,20 @@ A wikilink linter runs in CI (`.github/workflows/lint.yml`) on every push and PR
 python3 scripts/lint-wikilinks.py
 ```
 
-**When writing reports:** only reference reports that exist in `content/` with `[[wikilinks]]`. Wikilinks resolve by filename across all topic folders. Check `find content -name '*.md' | grep -v .obsidian` to see what's available.
+**When writing reports:** only reference reports that exist in `content/` with `[[wikilinks]]`.
+
+**⚠️ The linter matches on filename stem only — NOT the vault path.** `[[analyzing-wazuh]]` passes; `[[devsecops/analyzing-wazuh]]` fails as a dead link even though the file exists at that path. Always use bare stems: `[[analyzing-wazuh]]`, never `[[folder/analyzing-wazuh]]`. To see exactly what the linter indexes:
+
+```bash
+find content -name '*.md' -printf '%f\n' | sort -u
+```
+
+(The `find content -name '*.md'` path listing above is for checking what reports exist — convert each result to its bare stem when writing the link.)
+
+**Other linter gotchas:**
+- Don't link to reports that exist only as an unmerged PR — the target file isn't in `content/` yet and the linter will flag it. Omit the link, or merge the target PR first.
+- The linter does skip fenced code blocks, but avoid `[[...]]` in inline code and TOML/YAML examples anyway — they're ambiguous with real wikilinks.
+- If two files share a stem, the linter only sees one — rename to disambiguate.
 
 ## DO NOT
 
